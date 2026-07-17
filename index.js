@@ -69,6 +69,9 @@ wss.on('connection', (ws) => {
                     case 'join':
                         handleJoin(ws, data.roomCode);
                         break;
+                    case 'leave':
+                        handleLeave(ws);
+                        break;
                     default:
                         console.warn(`[Relay] Unknown message type: ${data.type}`);
                 }
@@ -171,6 +174,14 @@ function handleJoin(ws, roomCode) {
     if (room.hostSocket && room.hostSocket.readyState === WebSocket.OPEN) {
         room.hostSocket.send(JSON.stringify({ type: 'peer_connected' }));
     }
+}
+
+function handleLeave(ws) {
+    if (!ws.roomCode) return;
+    console.log(`[Relay] Client left room. Room: ${ws.roomCode}, Role: ${ws.role}`);
+    handleDisconnect(ws);
+    ws.roomCode = null;
+    ws.role = null;
 }
 
 function handleDisconnect(ws) {
