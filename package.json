@@ -1,0 +1,12 @@
+{
+  "name": "chess-unity-relay",
+  "version": "1.0.0",
+  "description": "WebSocket Relay and Room Matchmaker for ChessUnity",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "ws": "^8.16.0"
+  }
+}
