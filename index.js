@@ -47,6 +47,11 @@ wss.on('connection', (ws) => {
             const room = rooms.get(ws.roomCode);
             if (!room) return;
 
+            // Store action packet in the room history
+            if (room.actions) {
+                room.actions.push(message);
+            }
+
             const target = ws.role === 'host' ? room.joinerSocket : room.hostSocket;
             if (target && target.readyState === WebSocket.OPEN) {
                 target.send(message, { binary: true });
@@ -101,7 +106,8 @@ function handleCreate(ws, roomCode) {
         const newCode = generateRoomCode();
         rooms.set(newCode, {
             hostSocket: ws,
-            joinerSocket: null
+            joinerSocket: null,
+            actions: []
         });
         ws.roomCode = newCode;
         ws.role = 'host';
@@ -112,7 +118,8 @@ function handleCreate(ws, roomCode) {
 
     rooms.set(code, {
         hostSocket: ws,
-        joinerSocket: null
+        joinerSocket: null,
+        actions: []
     });
 
     ws.roomCode = code;
@@ -152,6 +159,15 @@ function handleJoin(ws, roomCode) {
     
     // Notify both host and joiner
     ws.send(JSON.stringify({ type: 'joined', roomCode: code }));
+
+    // Replay historical action packets to Joiner upon connection/reconnection
+    if (room.actions && room.actions.length > 0) {
+        console.log(`[Relay] Replaying ${room.actions.length} historical packets to Joiner.`);
+        for (const actionMessage of room.actions) {
+            ws.send(actionMessage, { binary: true });
+        }
+    }
+
     if (room.hostSocket && room.hostSocket.readyState === WebSocket.OPEN) {
         room.hostSocket.send(JSON.stringify({ type: 'peer_connected' }));
     }
